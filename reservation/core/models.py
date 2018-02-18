@@ -1,4 +1,7 @@
+from django.db.models import Q
 from django.db import models
+
+from rest_framework.exceptions import ValidationError
 
 
 class AddressMixin(models.Model):
@@ -15,6 +18,7 @@ class AddressMixin(models.Model):
     class Meta:
         abstract = True
         unique_together = (('name', 'address', 'city', 'country'),)
+        ordering = ['id']
 
 
 class Venue(AddressMixin):
@@ -34,13 +38,18 @@ class Venue(AddressMixin):
     #
     # You can add more fields here: check-in time, checkout-time etc
 
+    class Meta:
+        ordering = ['id']
+
 
 class Guest(AddressMixin):
     # Guess Information
     #
     # name, address, city, zipcode and country comes from AddressMixin
     #
-    pass
+
+    class Meta:
+        ordering = ['id']
 
 
 class Reservation(models.Model):
@@ -63,11 +72,39 @@ class Reservation(models.Model):
     # Additional checks to figure out if the given rooms/dates have already
     # booked have been ignored
 
+    def clean(self, *args, **kwargs):
+        # Assumption: Guest cannot check-in and check-out on the same day
+        # assuming that the guest to book for atleast 1 day.
+        if self.checkin >= self.checkout:
+            raise ValidationError({'error': 'checkin date should be less than '
+                                            'checkout date.'})
+
+        # Assumption: Guest 1 can check-out and Guest 2 can check-in on the
+        # same day
+        filters = (Q(checkin__lte=self.checkin, checkout__gt=self.checkin) |
+                   Q(checkin__lt=self.checkout, checkout__gte=self.checkout))
+        if self.pk:
+            # If modifying, the don't check for current one
+            filters &= ~Q(pk=self.pk)
+        if Reservation.objects.filter(
+           filters,
+           venue__id=self.venue_id, room__id=self.room_id
+           ).exists():
+            raise ValidationError({'error': 'There is an existing reservation '
+                                            'for this Room'})
+
+        return super(Reservation, self).clean(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Reservation, self).save(*args, **kwargs)
+
     def __str__(self):
         return '%s: %s :: %s' % (self.venue, self.room, self.state)
 
     class Meta:
         indexes = [models.Index(fields=['guest', 'venue', 'room'])]
+        ordering = ['id']
 
 
 class Room(models.Model):
@@ -90,6 +127,7 @@ class Room(models.Model):
     class Meta:
         unique_together = (('venue', 'room_number'),)
         indexes = [models.Index(fields=['venue', 'room_number'])]
+        ordering = ['id']
 
 
 class Calendar(models.Model):
@@ -110,3 +148,4 @@ class Calendar(models.Model):
     class Meta:
         unique_together = (('venue', 'room', 'day'))
         indexes = [models.Index(fields=['venue', 'room', 'day'])]
+        ordering = ['id']

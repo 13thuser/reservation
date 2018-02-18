@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import serializers
 from .models import Venue, Guest, Reservation, Room, Calendar
 
@@ -19,6 +20,12 @@ class RoomSerializer(serializers.ModelSerializer):
         model = Room
         fields = ('id', 'venue_id', 'room_number', 'room_type', 'room_desc')
         read_only_fields = ('id',)
+
+    def update(self, instance, validated_data):
+        venue = validated_data.pop('venue', None)
+        if venue is not None:
+            instance.venue_id = venue['id']
+        return super(RoomSerializer, self).update(instance, validated_data)
 
     def create(self, validated_data):
         venue_id = validated_data.pop('venue')['id']
@@ -45,14 +52,26 @@ class ReservationSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at', 'updated_at',
                             'venue', 'guest', 'room')
 
+    def update(self, instance, validated_data):
+        guest = validated_data.pop('guest', None)
+        if guest:
+            instance.guest_id = guest['id']
+        venue = validated_data.pop('venue', None)
+        if venue:
+            instance.venue_id = venue['id']
+        room = validated_data.pop('room', None)
+        if room:
+            instance.room_id = room['id']
+        return super(ReservationSerializer, self) \
+            .update(instance, validated_data)
+
     def create(self, validated_data):
-        print(validated_data)
-        guest = validated_data.pop('guest')
-        venue = validated_data.pop('venue')
-        room = validated_data.pop('room')
-        venue = Venue.objects.get(pk=venue['id'])
-        guest = Guest.objects.get(pk=guest['id'])
-        room = Room.objects.get(venue=venue, room_id=room['id'])
+        dct_guest = validated_data.pop('guest')
+        dct_venue = validated_data.pop('venue')
+        dct_room = validated_data.pop('room')
+        venue = Venue.objects.get(pk=dct_venue['id'])
+        guest = Guest.objects.get(pk=dct_guest['id'])
+        room = Room.objects.get(venue=venue, pk=dct_room['id'])
         return Reservation.objects.create(venue=venue, guest=guest, room=room,
                                           **validated_data)
 

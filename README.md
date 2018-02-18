@@ -1,72 +1,89 @@
-Setup:
+# Reservation
+A sample coding project.
 
-In repository folder, execute the following commands:
+Developed using python version `3.6.4` and Django version `2.0.2`.
 
-1. pip install -r requirements.txt
+##Summary
 
-2. cd reservation
+This project implements rest api for hypothetical venues and the reservation workflow.
 
-3. python manage.py migrate
+It supports following features:
 
-4. python manage.py populatedb
-   (Implemented as django manage command)
-
-5. python manage.py runsever
-
-6. Open http://localhost:8000/api/... (see api endpoints below)
-
-SUMMARY:
-
-Tried to implement various different features in a short time
- (few hours/days for 2 days)
-
-Implemented:
+- **API Endpoints**: Rest APIs for almost all of the entities. A very few are restricted or prohibited considering business impact.
+- **Browseable API**: All of the endpoints are browsable via any modern browser.
+- **Tests**: Tests are available for all of the entities and their supported methods. See [Tests](#Tests) section about how to run tests.
+- **Throttling**: State change methods (PUT, PATCH) are throttled to `1/minute` per resource. The throttled endpoint is `/api/reservations/:id`
 
 
-/api/venues/<id>
-    GET - Gives you venue details. Due to shortage of time, no listing
-          endpoint is done.
-    DELETE is not allowed
-
-/api/guests
-    GET - Gives you a list of guests
-    POST - Creates a new guest    
-    DELETE - Deletes a Guest
-
-/api/rooms
-
-    GET - list of rooms
-    GET - Allows you to search:
-      /api/rooms?venue_id=1
-      /api/rooms?room_number=3
-      /api/rooms?venue_id=1&room_number=3
-
-    POST - json data to create new room.
-           Error will tell you what fields are required
-
-/api/reservations
-
-    GET - returns a list of reservations
-    POST - creates a new reservation 
-
-The Calendar table will be populated behind the scenes by a backend job,
- so the creating objects in the calendar are not allowed.
-
-/api/calendar
-
-    GET - returns a list of bookings, 10 items per page
-
-/api/calendar/<yyyy-mm-dd>
-
-    GET - returns a list of bookings for that date, 10 items per page
-
-Default pagination: 10 items / page
+##Setup
 
 
-WHAT's NOT DONE
+	1. Clone this repository
+	2. cd <repository folder>
+	3. pip install -r requirements.txt
+	4. cd reservation
+	5. python manage.py makemigrations
+	6. python manage.py migrate
 
-- Tests: Sorry, ran out of time. For your convenience to look at api end points
-please use tool like Postman.
-- Dockerization: Again, due to timing constraints, it was not implemented.
-- Misc endpoints
-- Some assumptions were made, since this was a take-home exercise.
+## Initial Data	
+
+You can execute the following command to generate some sample data to play with or browse:
+
+	python manage.py command
+	
+
+## Browseable APIs
+
+To browse APIs using browser, run the dev webserver:
+
+	python manage.py runserver
+	
+By default, it will run on port `8000`, and you can hit an example url `http://localhost:8000/api/guests` to see list of options supported by the api endpoints. API enpoints are listed in [Api Endpoints](#api-endpoints) section below.
+
+
+## Tests
+ 
+ Run tests with the following command:
+ 
+	python manage.py test
+
+
+## API Enpoints
+
+The example enpoints are listed below. They are browsable as well.
+
+	# Guests API
+	http://localhost:8000/api/guests
+	[GET, POST, HEAD, OPTIONS]
+	
+	http://localhost:8000/api/guest/<:id>
+	[GET, PUT, PATCH, DELETE, HEAD, OPTIONS]
+	
+	# Venue API
+	http://localhost:8000/api/venues
+	[GET, HEAD, OPTIONS]
+	
+	http://localhost:8000/api/venues/<:id>
+	[GET, HEAD, OPTIONS]
+	
+	# Rooms API
+	http://localhost:8000/api/rooms
+	[GET, POST, HEAD, OPTIONS]
+	
+	http://localhost:8000/api/room/<:id>
+	GET, PUT, PATCH, DELETE, HEAD, OPTIONS
+	
+	# Reservation
+	http://localhost:8000/api/reservations
+	[GET, POST, HEAD, OPTIONS]
+	
+	# PUT and PATCH are throttled 1 call/minute per <:id>
+	http://localhost:8000/api/reservations/<:id>
+	[GET, PUT, PATCH, DELETE, HEAD, OPTIONS]
+	
+	# Calendar
+	http://localhost:8000/api/calendar
+	[GET, HEAD, OPTIONS]
+	
+	http://localhost:8000/api/calendar/<:yyyy-mm-dd>
+	[GET, HEAD, OPTIONS]

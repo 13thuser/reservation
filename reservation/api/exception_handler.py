@@ -1,8 +1,14 @@
-from rest_framework.views import exception_handler
+from functools import wraps
+from rest_framework.exceptions import ValidationError
 
 
-def api_exception_handler(exc, context):
-    response = exception_handler(exc, context)
-    if response is not None:
-        response.data['status_code'] = response.status_code
-    return response
+def api_exception_handler(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            fn(*args, **kwargs)
+        except Exception as e:
+            msg = getattr(e, 'messages') if hasattr(e, 'messages') else str(e)
+            raise ValidationError({'errors': msg})
+
+    return wrapper

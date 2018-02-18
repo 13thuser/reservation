@@ -74,9 +74,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'reservation.wsgi.application'
 
 REST_FRAMEWORK = {
-    # 'EXCEPTION_HANDLER': 'api.exception_handler.api_exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+    'DEFAULT_THROTTLE_RATES': {
+        'state_change': '1/minute',
+    }
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/djano_cache_default'
+    },
+    'api': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/djano_cache_api'
+    }
 }
 
 # Database
